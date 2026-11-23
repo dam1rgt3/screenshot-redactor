@@ -38,6 +38,8 @@ jobs:
 
   deploy:
     needs: build
+    outputs:
+      site_url: ${{ steps.pages.outputs.page_url }}
     runs-on: ubuntu-latest
     permissions:
       pages: write
@@ -58,3 +60,25 @@ jobs:
           grep -Fq 'Try a sample' homepage.html
           curl --fail --silent --show-error --retry 5 --retry-all-errors "$base/vendor/lang/eng.traineddata.gz" -o model.gz
           gzip -t model.gz
+
+  verify:
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Verify OCR, manual redaction and PNG export on the public site
+        env:
+          REDACTOR_TEST_URL: ${{ needs.deploy.outputs.site_url }}
+        run: |
+          test -n "$REDACTOR_TEST_URL"
+          export PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="$(command -v google-chrome)"
+          node --test tests/browser.e2e.mjs

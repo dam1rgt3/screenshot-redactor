@@ -5,15 +5,18 @@ import { once } from "node:events";
 import { after, before, test } from "node:test";
 import { chromium } from "playwright";
 
-let server, browser, origin;
+let server, browser, siteUrl;
 before(async () => {
-  server = spawn(process.execPath, ["scripts/serve.mjs"], {
-    env: { ...process.env, PORT: "0" },
-    stdio: ["ignore", "pipe", "inherit"],
-  });
-  const [line] = await once(server.stdout, "data");
-  origin = new URL(line.toString().match(/http:\/\/127\.0\.0\.1:\d+/)[0])
-    .origin;
+  if (process.env.REDACTOR_TEST_URL) {
+    siteUrl = new URL(process.env.REDACTOR_TEST_URL).href;
+  } else {
+    server = spawn(process.execPath, ["scripts/serve.mjs"], {
+      env: { ...process.env, PORT: "0" },
+      stdio: ["ignore", "pipe", "inherit"],
+    });
+    const [line] = await once(server.stdout, "data");
+    siteUrl = line.toString().match(/http:\/\/127\.0\.0\.1:\d+/)[0];
+  }
   browser = await chromium.launch({
     executablePath:
       process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined,
@@ -37,7 +40,7 @@ async function openPage(t, options) {
   t.after(() => {
     assert.ok(requests.length > 0);
     for (const [method, url] of requests) {
-      assert.equal(new URL(url).origin, origin);
+      assert.equal(new URL(url).origin, new URL(siteUrl).origin);
       assert.equal(method, "GET");
     }
   });
@@ -54,7 +57,7 @@ test("OCR, drag selection, undo and flattened export on the sample", async (t) =
       },
     }),
   );
-  await page.goto(origin);
+  await page.goto(siteUrl);
   await page.getByRole("button", { name: "Try a sample" }).click();
   await page.getByText("2 suggested areas found.", { exact: true }).waitFor();
   const email = page.getByRole("checkbox", {
@@ -153,7 +156,7 @@ test("OCR, drag selection, undo and flattened export on the sample", async (t) =
 
 test("file, pasted image, and drop use image content at mobile width", async (t) => {
   const page = await openPage(t, { viewport: { width: 390, height: 844 } });
-  await page.goto(origin);
+  await page.goto(siteUrl);
   const buffer = Buffer.from(
     await page.evaluate(() => {
       const c = document.createElement("canvas");
@@ -219,7 +222,7 @@ test("file, pasted image, and drop use image content at mobile width", async (t)
 test("a missing OCR model still allows manual redaction", async (t) => {
   const page = await openPage(t);
   await page.context().route("**/eng.traineddata.gz", (route) => route.abort());
-  await page.goto(origin);
+  await page.goto(siteUrl);
   await page.getByRole("button", { name: "Try a sample" }).click();
   await page
     .getByText("Text recognition is unavailable.", { exact: false })

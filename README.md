@@ -2,6 +2,8 @@
 
 Hide private details before sharing a screenshot. Open an image, review the email addresses and phone numbers the app finds, and cover anything else by hand. Copy the cleaned image into a message or save it as a PNG.
 
+**[Open the live demo](https://dam1rgt3.github.io/screenshot-redactor/)** and choose **Try a sample** to start with a fictional screenshot.
+
 ## Run locally
 
 Install Node.js 20 or later. From this directory, run:
