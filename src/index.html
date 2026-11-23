@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="Find and cover private details in screenshots directly in your browser, then copy or download a flattened PNG."
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <title>Screenshot Redactor</title>
+    <link rel="icon" href="icon.png" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="top-inner">
+        <div class="wordmark">
+          <span class="mark" aria-hidden="true"><b></b><b></b></span>Screenshot
+          Redactor
+        </div>
+        <span class="local"><span class="dot"></span>On-device processing</span>
+      </div>
+    </header>
+    <main>
+      <section id="welcome">
+        <div class="hero">
+          <h1>Redact a screenshot<span class="period">.</span></h1>
+          <p>
+            Hide the details you don’t want to share. Your image stays in this
+            browser.
+          </p>
+        </div>
+        <div class="landing-grid">
+          <section class="import-card">
+            <h2>Add your screenshot</h2>
+            <div id="drop-zone" class="dropbox">
+              <span aria-hidden="true" class="upload-glyph"><i></i></span>
+              <h3>Drop an image here</h3>
+              <p>or paste with <kbd id="paste-key">Ctrl</kbd> + <kbd>V</kbd></p>
+              <button id="choose" class="primary">Choose image</button>
+            </div>
+            <div class="card-foot">
+              <span>PNG, JPEG or WebP</span><span>Up to 30 MB</span>
+            </div>
+          </section>
+          <section class="sample-card">
+            <div class="sample-top"><h2>Sample support message</h2></div>
+            <div class="sample-mat" aria-hidden="true">
+              <div class="sample-paper">
+                <canvas id="sample-preview" width="1000" height="600"></canvas>
+              </div>
+            </div>
+            <div class="sample-foot">
+              <p>Find the email and phone number in a support message.</p>
+              <button id="sample" class="text-action" aria-label="Try a sample">
+                Try a sample <span aria-hidden="true">↗</span>
+              </button>
+            </div>
+          </section>
+        </div>
+      </section>
+      <section id="editor" hidden>
+        <div class="editor-heading">
+          <div>
+            <h1>Review redactions<span class="period">.</span></h1>
+            <p id="file-info"></p>
+          </div>
+          <div class="image-actions">
+            <button class="text-action" id="clear">Clear image</button
+            ><button class="secondary" id="replace">Change image</button>
+          </div>
+        </div>
+        <div class="editor-grid">
+          <section class="preview-card">
+            <div class="toolbar">
+              <div class="tabs" aria-label="Preview mode">
+                <button id="review" aria-pressed="true">Review</button
+                ><button id="cleaned" aria-pressed="false">
+                  Export preview
+                </button>
+              </div>
+              <div class="tools">
+                <button id="draw" aria-pressed="false" class="secondary small">
+                  Draw area</button
+                ><button id="zoom" class="secondary small" aria-pressed="false">
+                  Actual size
+                </button>
+              </div>
+            </div>
+            <div class="stage" id="stage">
+              <div class="surface" id="surface">
+                <canvas
+                  id="preview-canvas"
+                  aria-label="Screenshot with redaction regions"
+                ></canvas>
+              </div>
+            </div>
+            <p class="stage-hint" id="stage-hint">
+              Select or deselect a marked area. Use Draw area to cover anything
+              else.
+            </p>
+          </section>
+          <aside class="inspector">
+            <div class="inspector-head">
+              <h2>Redactions</h2>
+              <span id="count" class="counter">0 selected</span>
+            </div>
+            <div class="scan" id="scan" role="status"></div>
+            <button id="skip-scan" type="button" class="text-action" hidden>
+              Continue manually
+            </button>
+            <div id="area-list" class="area-list"></div>
+            <div class="manual-actions">
+              <button id="keyboard-area" class="text-action">
+                Add area by coordinates</button
+              ><button class="text-action" id="undo" disabled>Undo</button>
+            </div>
+            <form id="coords" hidden>
+              <fieldset>
+                <legend>Image pixels from the top left</legend>
+                <div class="fields">
+                  <label
+                    >Left<input
+                      id="cx"
+                      type="number"
+                      min="0"
+                      value="0"
+                      required /></label
+                  ><label
+                    >Top<input id="cy" type="number" min="0" value="0" required
+                  /></label>
+                  <label
+                    >Width<input
+                      id="cw"
+                      type="number"
+                      min="1"
+                      value="100"
+                      required /></label
+                  ><label
+                    >Height<input
+                      id="ch"
+                      type="number"
+                      min="1"
+                      value="40"
+                      required
+                  /></label>
+                </div>
+                <button class="secondary small">Add area</button>
+              </fieldset>
+            </form>
+            <div class="export">
+              <p>
+                Review the full image before sharing. Automatic detection can
+                miss details.
+              </p>
+              <button id="copy" class="primary full">Copy cleaned image</button
+              ><button id="download" class="secondary full">
+                Download PNG
+              </button>
+            </div>
+          </aside>
+        </div>
+      </section>
+      <input
+        id="file"
+        class="sr-only"
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        tabindex="-1"
+        aria-label="Select screenshot"
+      />
+      <div id="notice" role="status" aria-live="polite"></div>
+    </main>
+    <script src="vendor/tesseract.min.js" defer></script>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
